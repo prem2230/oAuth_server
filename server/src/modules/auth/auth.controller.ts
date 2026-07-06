@@ -2,53 +2,76 @@ import { Request, Response } from "express";
 import { createGoogleLoginUrl, handleGoogleCallback } from "./auth.service";
 
 export const googleLogin = (req: Request, res: Response) => {
-    const { url, state } = createGoogleLoginUrl();
+  console.log("[Auth Controller] GET /auth/google");
 
-    res.cookie("google_oauth_state", state, {
-        httpOnly: true,
-        sameSite: "lax",
-        secure: false,
-        maxAge: 10 * 60 * 1000,
-    });
+  const { url, state } = createGoogleLoginUrl();
 
-    res.redirect(url);
+  console.log("[Auth Controller] Saving OAuth state cookie");
+
+  res.cookie("google_oauth_state", state, {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: false,
+    maxAge: 10 * 60 * 1000,
+  });
+
+  console.log("[Auth Controller] Redirecting browser to Google");
+
+  res.redirect(url);
 };
 
 export const googleCallback = async (req: Request, res: Response) => {
-    try {
-        const { code, state } = req.query;
-        const savedState = req.cookies.google_oauth_state;
+  try {
+    console.log("[Auth Controller] GET /auth/google/callback");
 
-        if (!code || typeof code !== "string") {
-            return res.status(400).json({
-                message: "Missing authorization code",
-            });
-        }
+    const { code, state } = req.query;
+    const savedState = req.cookies.google_oauth_state;
 
-        if (!state || state !== savedState) {
-            return res.status(400).json({
-                message: "Invalid OAuth state",
-            });
-        }
+    if (!code || typeof code !== "string") {
+      console.log("[Auth Controller] Missing authorization code");
 
-        const { user, token } = await handleGoogleCallback(code);
-
-        res.clearCookie("google_oauth_state");
-
-        res.cookie("access_token", token, {
-            httpOnly: true,
-            sameSite: "lax",
-            secure: false,
-            maxAge: 7 * 24 * 60 * 60 * 1000,
-        });
-
-        return res.status(200).json({
-            message: "Google login successful",
-            user,
-        });
-    } catch (error) {
-        return res.status(500).json({
-            message: "Google login failed",
-        });
+      return res.status(400).json({
+        message: "Missing authorization code",
+      });
     }
+
+    if (!state || state !== savedState) {
+      console.log("[Auth Controller] Invalid OAuth state", {
+        hasState: Boolean(state),
+        hasSavedState: Boolean(savedState),
+      });
+
+      return res.status(400).json({
+        message: "Invalid OAuth state",
+      });
+    }
+
+    console.log("[Auth Controller] OAuth state is valid");
+
+    const { user, token } = await handleGoogleCallback(code);
+
+    console.log("[Auth Controller] Clearing OAuth state cookie");
+
+    res.clearCookie("google_oauth_state");
+
+    console.log("[Auth Controller] Saving access token cookie");
+
+    res.cookie("access_token", token, {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: false,
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    return res.status(200).json({
+      message: "Google login successful",
+      user,
+    });
+  } catch (error) {
+    console.error("[Auth Controller] Google login failed", error);
+
+    return res.status(500).json({
+      message: "Google login failed",
+    });
+  }
 };
