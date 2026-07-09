@@ -1,21 +1,18 @@
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
-import dotenv from "dotenv";
-import authRoutes from "./modules/auth/auth.routes";
-
-dotenv.config();
+import { connectDatabase } from "./config/database";
+import { env } from "./config/env";
+import { requestLogger } from "./middlewares/requestLogger.middleware";
+import authRoutes from "./routes/auth.routes";
 
 const app = express();
 
-app.use((req, res, next) => {
-  console.log("[HTTP]", req.method, req.originalUrl);
-  next();
-});
+app.use(requestLogger);
 
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL,
+    origin: env.frontendUrl,
     credentials: true,
   }),
 );
@@ -25,9 +22,17 @@ app.use(cookieParser());
 
 app.use("/auth", authRoutes);
 
-const port = process.env.PORT || 4000;
+const startServer = async () => {
+  await connectDatabase();
 
-app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
-  console.log(`Google login URL: http://localhost:${port}/auth/google`);
+  app.listen(env.port, () => {
+    console.log(`Server running on port ${env.port}`);
+    console.log(`Database type: ${env.dbType}`);
+    console.log(`Google login URL: http://localhost:${env.port}/auth/google`);
+  });
+};
+
+startServer().catch((error) => {
+  console.error("[Server] Failed to start", error);
+  process.exit(1);
 });

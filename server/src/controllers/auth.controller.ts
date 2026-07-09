@@ -1,12 +1,13 @@
 import { Request, Response } from "express";
-import { createGoogleLoginUrl, handleGoogleCallback } from "./auth.service";
+import { createGoogleLoginUrl, handleGoogleCallback } from "../services/auth.service";
+import { logger } from "../utils/logger";
 
 export const googleLogin = (req: Request, res: Response) => {
-  console.log("[Auth Controller] GET /auth/google");
+  logger.info("[Auth Controller] GET /auth/google");
 
   const { url, state } = createGoogleLoginUrl();
 
-  console.log("[Auth Controller] Saving OAuth state cookie");
+  logger.info("[Auth Controller] Saving OAuth state cookie");
 
   res.cookie("google_oauth_state", state, {
     httpOnly: true,
@@ -15,20 +16,20 @@ export const googleLogin = (req: Request, res: Response) => {
     maxAge: 10 * 60 * 1000,
   });
 
-  console.log("[Auth Controller] Redirecting browser to Google");
+  logger.info("[Auth Controller] Redirecting browser to Google");
 
   res.redirect(url);
 };
 
 export const googleCallback = async (req: Request, res: Response) => {
   try {
-    console.log("[Auth Controller] GET /auth/google/callback");
+    logger.info("[Auth Controller] GET /auth/google/callback");
 
     const { code, state } = req.query;
     const savedState = req.cookies.google_oauth_state;
 
     if (!code || typeof code !== "string") {
-      console.log("[Auth Controller] Missing authorization code");
+      logger.info("[Auth Controller] Missing authorization code");
 
       return res.status(400).json({
         message: "Missing authorization code",
@@ -36,7 +37,7 @@ export const googleCallback = async (req: Request, res: Response) => {
     }
 
     if (!state || state !== savedState) {
-      console.log("[Auth Controller] Invalid OAuth state", {
+      logger.info("[Auth Controller] Invalid OAuth state", {
         hasState: Boolean(state),
         hasSavedState: Boolean(savedState),
       });
@@ -46,15 +47,15 @@ export const googleCallback = async (req: Request, res: Response) => {
       });
     }
 
-    console.log("[Auth Controller] OAuth state is valid");
+    logger.info("[Auth Controller] OAuth state is valid");
 
     const { user, token } = await handleGoogleCallback(code);
 
-    console.log("[Auth Controller] Clearing OAuth state cookie");
+    logger.info("[Auth Controller] Clearing OAuth state cookie");
 
     res.clearCookie("google_oauth_state");
 
-    console.log("[Auth Controller] Saving access token cookie");
+    logger.info("[Auth Controller] Saving access token cookie");
 
     res.cookie("access_token", token, {
       httpOnly: true,
@@ -68,7 +69,7 @@ export const googleCallback = async (req: Request, res: Response) => {
       user,
     });
   } catch (error) {
-    console.error("[Auth Controller] Google login failed", error);
+    logger.error("[Auth Controller] Google login failed", error);
 
     return res.status(500).json({
       message: "Google login failed",

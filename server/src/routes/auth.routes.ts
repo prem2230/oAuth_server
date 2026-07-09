@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { googleCallback, googleLogin } from "./auth.controller";
+import { googleCallback, googleLogin } from "../controllers/auth.controller";
 
 const router = Router();
 

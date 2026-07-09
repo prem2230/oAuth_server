@@ -1,14 +1,43 @@
 # Google OAuth Backend Practice
 
-Node.js, TypeScript, Express, PostgreSQL, and Google OAuth practice backend.
+Node.js, TypeScript, Express, Google OAuth, and switchable PostgreSQL/MongoDB persistence.
 
-## 1. Environment
+## Structure
 
-Copy `.env.example` to `.env` and fill in your real values.
+```txt
+src/
+  config/        env and database connections
+  controllers/   Express request/response handlers
+  middlewares/   Express middleware
+  models/        PostgreSQL and MongoDB persistence
+  routes/        Express route definitions
+  services/      OAuth and auth business logic
+  utils/         shared helpers
+  server.ts      app entry point
+```
+
+## Environment
+
+Copy `.env.example` to `.env` and fill in real values.
+
+Use PostgreSQL:
+
+```env
+DB_TYPE=postgresql
+DATABASE_URL=postgresql://postgres:your_postgres_password@localhost:5432/oauth_practice
+```
+
+Use MongoDB:
+
+```env
+DB_TYPE=mongodb
+MONGO_URI=mongodb://127.0.0.1:27017/oauth_practice
+```
+
+Shared OAuth values:
 
 ```env
 PORT=4000
-DATABASE_URL=postgresql://postgres:your_postgres_password@localhost:5432/oauth_practice
 GOOGLE_CLIENT_ID=your_google_client_id
 GOOGLE_CLIENT_SECRET=your_google_client_secret
 GOOGLE_CALLBACK_URL=http://localhost:4000/auth/google/callback
@@ -16,7 +45,7 @@ JWT_SECRET=replace_this_with_a_long_random_secret
 FRONTEND_URL=http://localhost:3000
 ```
 
-## 2. PostgreSQL Setup In pgAdmin
+## PostgreSQL Setup In pgAdmin
 
 1. Open pgAdmin.
 2. Expand `Servers`.
@@ -55,13 +84,18 @@ CREATE TABLE IF NOT EXISTS oauth_accounts (
 );
 ```
 
-To view saved users:
+## MongoDB Setup
 
-```txt
-oauth_practice -> Schemas -> public -> Tables -> users -> View/Edit Data
+For local MongoDB, set:
+
+```env
+DB_TYPE=mongodb
+MONGO_URI=mongodb://127.0.0.1:27017/oauth_practice
 ```
 
-## 3. Google Cloud Console Setup
+Mongoose creates the `users` and `oauthaccounts` collections when the first Google login succeeds.
+
+## Google Cloud Console
 
 Create an OAuth client for a web application.
 
@@ -73,64 +107,34 @@ http://localhost:4000/auth/google/callback
 
 Copy the client ID and client secret into `.env`.
 
-## 4. Run The Server
+## Run
 
 ```bash
 npm install
 npm run dev
 ```
 
-Open this URL in your browser:
+Open:
 
 ```txt
 http://localhost:4000/auth/google
 ```
 
-## 5. Testing With Postman
+## Testing With Postman
 
-Google OAuth login is browser-based because Google needs to show its login screen and redirect back with cookies.
+Google OAuth login is browser-based because Google must show its login screen and redirect back with cookies.
 
-Best beginner test:
+For the best test, use the browser:
 
 1. Start the server with `npm run dev`.
-2. Open `http://localhost:4000/auth/google` in a browser.
-3. Login with your Google account.
-4. The backend callback should return JSON:
+2. Open `http://localhost:4000/auth/google`.
+3. Login with Google.
+4. The backend callback should return JSON with `Google login successful`.
+5. Watch the terminal logs to see the flow.
 
-```json
-{
-  "message": "Google login successful",
-  "user": {}
-}
-```
+In Postman, you can test only the first redirect:
 
-5. Watch the terminal logs to understand each step.
-6. Check pgAdmin to confirm the user was saved.
-
-You can also test the first redirect in Postman:
-
-1. Create a `GET` request.
-2. URL: `http://localhost:4000/auth/google`
-3. In Postman settings for that request, turn off automatic redirect following if you want to inspect the Google redirect URL.
-4. Send the request.
-5. You should receive a redirect response with a `Location` header pointing to Google.
-
-Do not manually call `/auth/google/callback` unless you have a real `code` and matching `google_oauth_state` cookie from the login flow.
-
-## 6. Expected Log Flow
-
-```txt
-[HTTP] GET /auth/google
-[Auth Controller] GET /auth/google
-[Auth Service] Creating OAuth state
-[Google OAuth] Creating Google authorization URL
-[Auth Controller] Redirecting browser to Google
-[HTTP] GET /auth/google/callback
-[Auth Controller] OAuth state is valid
-[Google OAuth] Exchanging authorization code for tokens
-[Google OAuth] Verifying Google ID token
-[User Repository] Finding user by Google ID
-[User Repository] Creating user with Google account
-[Auth Service] Creating application JWT
-[Auth Service] Login completed
-```
+1. `GET http://localhost:4000/auth/google`
+2. Turn off automatic redirects.
+3. Send the request.
+4. Inspect the `Location` header pointing to Google.

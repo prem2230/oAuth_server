@@ -1,27 +1,26 @@
 import crypto from "crypto";
 import jwt from "jsonwebtoken";
-import {
-  getGoogleAuthUrl,
-  getGoogleUserFromCode,
-} from "./google-oauth.service";
+import { env } from "../config/env";
 import {
   createUserWithGoogleAccount,
   findUserByGoogleId,
-} from "../users/user.repository";
+} from "../models/user.model";
+import { logger } from "../utils/logger";
+import { getGoogleAuthUrl, getGoogleUserFromCode } from "./google-oauth.service";
 
 export const createGoogleLoginUrl = () => {
-  console.log("[Auth Service] Creating OAuth state");
+  logger.info("[Auth Service] Creating OAuth state");
 
   const state = crypto.randomBytes(32).toString("hex");
   const url = getGoogleAuthUrl(state);
 
-  console.log("[Auth Service] Google login URL created");
+  logger.info("[Auth Service] Google login URL created");
 
   return { url, state };
 };
 
 export const handleGoogleCallback = async (code: string) => {
-  console.log("[Auth Service] Handling Google callback");
+  logger.info("[Auth Service] Handling Google callback");
 
   const googleUser = await getGoogleUserFromCode(code);
 
@@ -29,12 +28,12 @@ export const handleGoogleCallback = async (code: string) => {
     throw new Error("Google account does not have an email");
   }
 
-  console.log("[Auth Service] Searching user by Google ID");
+  logger.info("[Auth Service] Searching user by Google ID");
 
   let user = await findUserByGoogleId(googleUser.googleId);
 
   if (!user) {
-    console.log("[Auth Service] User not found. Creating user");
+    logger.info("[Auth Service] User not found. Creating user");
 
     user = await createUserWithGoogleAccount({
       googleId: googleUser.googleId,
@@ -44,26 +43,26 @@ export const handleGoogleCallback = async (code: string) => {
       emailVerified: googleUser.emailVerified,
     });
   } else {
-    console.log("[Auth Service] Existing user found", {
+    logger.info("[Auth Service] Existing user found", {
       userId: user.id,
       email: user.email,
     });
   }
 
-  console.log("[Auth Service] Creating application JWT");
+  logger.info("[Auth Service] Creating application JWT");
 
   const token = jwt.sign(
     {
       userId: user.id,
       email: user.email,
     },
-    process.env.JWT_SECRET as string,
+    env.jwtSecret,
     {
       expiresIn: "7d",
     },
   );
 
-  console.log("[Auth Service] Login completed", {
+  logger.info("[Auth Service] Login completed", {
     userId: user.id,
     email: user.email,
   });

@@ -1,22 +1,18 @@
 import { OAuth2Client } from "google-auth-library";
-import { GoogleUser } from "../users/user.types";
+import { env } from "../config/env";
+import { GoogleUser } from "../models/user.types";
+import { logger } from "../utils/logger";
 
 const createGoogleClient = () => {
-  const clientId = process.env.GOOGLE_CLIENT_ID;
-  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-  const callbackUrl = process.env.GOOGLE_CALLBACK_URL;
-
-  if (!clientId || !clientSecret || !callbackUrl) {
-    throw new Error(
-      "Missing Google OAuth env values. Check GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, and GOOGLE_CALLBACK_URL.",
-    );
-  }
-
-  return new OAuth2Client(clientId, clientSecret, callbackUrl);
+  return new OAuth2Client(
+    env.googleClientId,
+    env.googleClientSecret,
+    env.googleCallbackUrl,
+  );
 };
 
 export const getGoogleAuthUrl = (state: string): string => {
-  console.log("[Google OAuth] Creating Google authorization URL");
+  logger.info("[Google OAuth] Creating Google authorization URL");
 
   const googleClient = createGoogleClient();
 
@@ -31,21 +27,20 @@ export const getGoogleAuthUrl = (state: string): string => {
 export const getGoogleUserFromCode = async (
   code: string,
 ): Promise<GoogleUser> => {
-  console.log("[Google OAuth] Exchanging authorization code for tokens");
+  logger.info("[Google OAuth] Exchanging authorization code for tokens");
 
   const googleClient = createGoogleClient();
-
   const { tokens } = await googleClient.getToken(code);
 
   if (!tokens.id_token) {
     throw new Error("No id_token received from Google");
   }
 
-  console.log("[Google OAuth] Verifying Google ID token");
+  logger.info("[Google OAuth] Verifying Google ID token");
 
   const ticket = await googleClient.verifyIdToken({
     idToken: tokens.id_token,
-    audience: process.env.GOOGLE_CLIENT_ID,
+    audience: env.googleClientId,
   });
 
   const payload = ticket.getPayload();
@@ -54,7 +49,7 @@ export const getGoogleUserFromCode = async (
     throw new Error("Invalid Google token");
   }
 
-  console.log("[Google OAuth] Google user verified", {
+  logger.info("[Google OAuth] Google user verified", {
     googleId: payload.sub,
     email: payload.email,
   });

@@ -10,8 +10,13 @@ export interface User {
   id: string;
   email: string;
   name: string | null;
-  avatar_url: string | null;
-  email_verified: boolean;
-  created_at: Date;
-  updated_at: Date;
+  avatarUrl: string | null;
+  emailVerified: boolean;
+  createdAt: Date;
+  updatedAt: Date;
 }
+
+export type CreateGoogleUserInput = Required<
+  Pick<GoogleUser, "googleId" | "email">
+> &
+  GoogleUser;
