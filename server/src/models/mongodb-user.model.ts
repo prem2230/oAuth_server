@@ -129,6 +129,29 @@ export const findMongoUserByGoogleId = async (
   return mapMongoUser(user);
 };
 
+export const findMongoUserById = async (
+  userId: string,
+): Promise<User | null> => {
+  console.log("[MongoDB User Model] Finding user by ID", { userId });
+
+  if (!Types.ObjectId.isValid(userId)) {
+    console.log("[MongoDB User Model] Invalid user ID");
+    return null;
+  }
+
+  const user = await MongoUserModel.findById(userId);
+
+  console.log("[MongoDB User Model] User lookup by ID completed", {
+    found: Boolean(user),
+  });
+
+  if (!user) {
+    return null;
+  }
+
+  return mapMongoUser(user);
+};
+
 export const createMongoUserWithGoogleAccount = async (
   data: CreateGoogleUserInput,
 ): Promise<User> => {

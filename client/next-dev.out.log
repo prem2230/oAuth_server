@@ -1,0 +1,16 @@
+
+> oauth-client@0.1.0 dev
+> next dev
+
+▲ Next.js 16.2.10 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.0.4:3000
+✓ Ready in 889ms
+Creating turbopack project { dir: 'D:\\Projects\\oAuth\\client', testMode: true }
+
+ GET / 200 in 1542ms (next.js: 1378ms, application-code: 164ms)
+ GET / 200 in 61ms (next.js: 10ms, application-code: 51ms)
+ GET / 200 in 70ms (next.js: 18ms, application-code: 52ms)
+ GET / 200 in 45ms (next.js: 6ms, application-code: 39ms)
+ GET /auth/success 200 in 753ms (next.js: 599ms, application-code: 154ms)
+ GET / 200 in 61ms (next.js: 23ms, application-code: 39ms)

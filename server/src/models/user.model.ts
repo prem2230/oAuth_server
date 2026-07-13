@@ -1,9 +1,11 @@
 import { env } from "../config/env";
 import {
+  findMongoUserById,
   createMongoUserWithGoogleAccount,
   findMongoUserByGoogleId,
 } from "./mongodb-user.model";
 import {
+  findPostgresUserById,
   createPostgresUserWithGoogleAccount,
   findPostgresUserByGoogleId,
 } from "./postgresql-user.model";
@@ -17,6 +19,14 @@ export const findUserByGoogleId = async (
   }
 
   return findPostgresUserByGoogleId(googleId);
+};
+
+export const findUserById = async (userId: string): Promise<User | null> => {
+  if (env.dbType === "mongodb") {
+    return findMongoUserById(userId);
+  }
+
+  return findPostgresUserById(userId);
 };
 
 export const createUserWithGoogleAccount = async (

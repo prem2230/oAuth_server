@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken";
 import { env } from "../config/env";
 import {
   createUserWithGoogleAccount,
+  findUserById,
   findUserByGoogleId,
 } from "../models/user.model";
 import { logger } from "../utils/logger";
@@ -68,4 +69,28 @@ export const handleGoogleCallback = async (code: string) => {
   });
 
   return { user, token };
+};
+
+interface AuthTokenPayload {
+  userId: string;
+  email: string;
+}
+
+export const getCurrentUserFromToken = async (token?: string) => {
+  if (!token) {
+    return null;
+  }
+
+  try {
+    const payload = jwt.verify(token, env.jwtSecret) as AuthTokenPayload;
+
+    if (!payload.userId) {
+      return null;
+    }
+
+    return findUserById(payload.userId);
+  } catch (error) {
+    logger.info("[Auth Service] Invalid access token", error);
+    return null;
+  }
 };

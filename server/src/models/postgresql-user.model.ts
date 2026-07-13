@@ -43,6 +43,31 @@ export const findPostgresUserByGoogleId = async (
   return mapPostgresUser(result.rows[0]);
 };
 
+export const findPostgresUserById = async (
+  userId: string,
+): Promise<User | null> => {
+  console.log("[PostgreSQL User Model] Finding user by ID", { userId });
+
+  const result = await postgresPool.query(
+    `
+    SELECT *
+    FROM users
+    WHERE id = $1
+    `,
+    [userId],
+  );
+
+  console.log("[PostgreSQL User Model] User lookup by ID completed", {
+    found: result.rows.length > 0,
+  });
+
+  if (!result.rows[0]) {
+    return null;
+  }
+
+  return mapPostgresUser(result.rows[0]);
+};
+
 export const createPostgresUserWithGoogleAccount = async (
   data: CreateGoogleUserInput,
 ): Promise<User> => {
